@@ -18,5 +18,9 @@
   "bugs": {
     "url": "https://github.com/atomoil/osm_taginfo/issues"
   },
-  "homepage": "https://github.com/atomoil/osm_taginfo"
+  "homepage": "https://github.com/atomoil/osm_taginfo",
+  "dependencies": {
+    "google-spreadsheet": "^1.0.1",
+    "moment": "^2.10.6"
+  }
 }
