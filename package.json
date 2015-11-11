@@ -21,6 +21,7 @@
   "homepage": "https://github.com/atomoil/osm_taginfo",
   "dependencies": {
     "google-spreadsheet": "^1.0.1",
-    "moment": "^2.10.6"
+    "moment": "^2.10.6",
+    "request": "^2.65.0"
   }
 }
