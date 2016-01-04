@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/atomoil/osm_taginfo",
   "dependencies": {
+    "async": "^1.5.1",
     "google-spreadsheet": "^1.0.1",
     "moment": "^2.10.6",
     "request": "^2.65.0"
