@@ -1,3 +1,14 @@
+[
 {
+  "taginfo_key": "osm-key-goes-here",
+  "taginfo_value": "osm-value-goes-here",
   "google_sheet_id": "google-sheet-id-goes-here"
+  "worksheet_number": 1
+},
+{
+  "taginfo_key": "osm-key-goes-here",
+  "taginfo_value": "osm-value-goes-here",
+  "google_sheet_id": "google-sheet-id-goes-here"
+  "worksheet_number": 1
 }
+]
