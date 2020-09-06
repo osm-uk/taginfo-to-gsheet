@@ -4,6 +4,7 @@
   "description": "a simple script to get taginfo data and put it into a google sheet",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,8 +22,8 @@
   "homepage": "https://github.com/atomoil/osm_taginfo",
   "dependencies": {
     "async": "^1.5.1",
-    "google-spreadsheet": "^1.0.1",
-    "moment": "^2.10.6",
-    "request": "^2.65.0"
+    "bent": "^7.3.10",
+    "google-spreadsheet": "^3.0.0",
+    "moment": "^2.10.6"
   }
 }

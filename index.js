@@ -6,15 +6,15 @@
   */
 
 // import everything
-var request = require('request')
+var bent    = require('bent')
 var moment  = require('moment')
-var gs      = require("google-spreadsheet")
+const { GoogleSpreadsheet } = require("google-spreadsheet")
 var async   = require("async")
+// @TODO get google-generated-creds dynamically
 var g_creds = require('./google-generated-creds.json')
+// @TODO get preference data dynamically
 var data    = require('./google-sheet-id.json')
 
-
-console.log( data )
 
 /*
 var sheet_id = require('./google-sheet-id.json').google_sheet_id
@@ -27,7 +27,9 @@ var value = 'nature_reserve'
 
 var actions = []
 
-var generic_method = function(callback){
+const get = bent('https://taginfo.openstreetmap.org.uk/', 'GET', 'json', 200);
+
+const generic_method = async function(callback) {
 	
 	// convert bound variables to local variables so they retain scope in this function 
 	var tag          = this.tag
@@ -36,64 +38,58 @@ var generic_method = function(callback){
 	var value        = this.value
 	var worksheet_id = this.worksheet_id
 	
-	console.log("started on "+tag,sheet_id)
-	request.get( 'http://taginfo.openstreetmap.org.uk/api/4/tag/stats?key='+ key+'&value='+value, function (error, response, body) {
-		if (!error && response.statusCode == 200) {
-			// example response: {"total":4,"url":"http://taginfo.openstreetmap.org.uk/api/4/tag/stats?key=leisure&value=nature_reserve","data":[{"type":"all","count":1670,"count_fraction":0.0},{"type":"nodes","count":147,"count_fraction":0.0},{"type":"ways","count":1454,"count_fraction":0.0002},{"type":"relations","count":69,"count_fraction":0.0005}]}
-			// convert json string to object
-			var alldata   = JSON.parse( body )
-			// get the data object
-			var data      = alldata.data
-			// get today's date
-			var date_str  = moment().format("YYYY-MM-DD")
-			// initialise variables with default
-			var all       = -1
-			var nodes     = -1
-			var ways      = -1
-			var relations = -1
-			// loop through and get values
-			for(var i=0;i<data.length;i++){
-				var type  = data[i].type
-				var count = data[i].count
-				switch (type) {
-					case "all":
-						all = count
-						break
-					case "nodes":
-						nodes = count
-						break
-					case "ways":
-						ways = count
-						break
-					case "relations":
-						relations = count
-						break
-	
-				}
-			}
-		
-			g_sheet = new gs( sheet_id )
+    // console.log("started on "+tag,sheet_id)
+    const alldata = await get('api/4/tag/stats?key='+ key+'&value='+value);
 
-			// now initialise the Google Sheet Auth
-			g_sheet.useServiceAccountAuth(g_creds, function(err){
-	
-				// add a row to the specified worksheet in the google sheet
-				g_sheet.addRow( worksheet_id, {date:date_str, tag:tag, all:all, nodes:nodes, ways:ways, relations:relations}, function(err){
-					if (err){
-						console.log("Sorry, there was an error adding "+tag+" to the google sheet (does the worksheet exist?)",err)
-						callback( null, err )
-					} else {
-						console.log("Added "+tag+" to google sheet")
-						callback( null, true )
-					}
-				})
-			})
+    // get the data object
+    var data      = alldata.data
+    // get today's date
+    var date_str  = moment().format("YYYY-MM-DD")
+    // initialise variables with default
+    var all       = -1
+    var nodes     = -1
+    var ways      = -1
+    var relations = -1
+    // loop through and get values
+    for(var i=0;i<data.length;i++){
+        var type  = data[i].type
+        var count = data[i].count
+        switch (type) {
+            case "all":
+                all = count
+                break
+            case "nodes":
+                nodes = count
+                break
+            case "ways":
+                ways = count
+                break
+            case "relations":
+                relations = count
+                break
 
-		} else {
-			console.log("Sorry, there was an error getting taginfo data for",tag, error)
-			callback( null, error )
-		}
-	})
+        }
+    }
+
+    try {
+
+        g_sheet = new GoogleSpreadsheet( sheet_id )
+
+        await g_sheet.useServiceAccountAuth(g_creds)
+        await g_sheet.loadInfo()
+        // now initialise the Google Sheet Auth
+        
+        const sheet = g_sheet.sheetsByIndex[ worksheet_id ] 
+        // add a row to the specified worksheet in the google sheet
+        await sheet.addRow({date:date_str, tag:tag, all:all, nodes:nodes, ways:ways, relations:relations})
+
+        console.log("Added "+tag+" to google sheet")
+        callback( null, true )
+
+    } catch (error) {
+        console.log(`Sorry, there was an error adding "${tag}" to the google sheet '${error.message}'`)
+        callback( null, error )
+    }
 
 }
 
