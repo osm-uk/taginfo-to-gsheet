@@ -112,8 +112,11 @@ const main = async () => {
     const preferenceData = [
         {name: "food_standards", key: "fhrs:id"}, 
         {name: "oneway=yes", key: "oneway", value: "yes"}, 
-        //{name: "", key: "", values: ["",""]}, 
-        //{name: "", key: "", values: [""], other_key: "", other_values: [""]} 
+        {name: "highway=path", key: "highway", value: "path"}, 
+        {name: "highway=footway", key: "highway", value: "footway"}, 
+        {name: "highway=path||footway", key: "highway", values: ["path","footway"]}, 
+        {name: "", keys: ["fixme", "FIXME"]}, 
+        {name: "", key: "", values: [""], other_key: "", other_values: [""]} 
     ]
 
     const tagInfoData = await getTagInfoData(preferenceData)
@@ -142,15 +145,14 @@ const getTagInfoData = async (searchData) => {
 const processTagInfoEntry = async (data) => {
     let response = null
 
-
-    let keys = getKeys(data)
+    let keys = removeEmptyEntries(getKeys(data))
     if (keys.length == 0) return null
 
-    let values = getValues(data)
+    let values = removeEmptyEntries(getValues(data))
 
     const name = data.name ? data.name : keys[0]
 
-    if (values != null) {
+    if (values.length > 0) {
         response = await queryKeyValue(keys, values)
     } else {
         response = await queryKey(keys)
@@ -188,7 +190,13 @@ const getKeys = (data) => {
 const getValues = (data) => {
     if (data.value != undefined) return [data.value]
     if (data.values != undefined) return data.values
-    return null
+    return []
+}
+
+const removeEmptyEntries = (data) => {
+    let response = data.filter( val => val != "" )
+    if (response.length != data.length) console.log("removed entries!")
+    return response
 }
 
 const queryKey = async (keys) => {
