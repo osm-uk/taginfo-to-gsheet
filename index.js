@@ -110,20 +110,64 @@ const processData = (data) => {
 
 const main = async () => {
     const preferenceData = [
-        {name: "food_standards", key: "fhrs:id"}, 
-        {name: "oneway=yes", key: "oneway", value: "yes"}, 
-        {name: "highway=path", key: "highway", value: "path"}, 
-        {name: "highway=footway", key: "highway", value: "footway"}, 
-        {name: "highway=path||footway", key: "highway", values: ["path","footway"]}, 
-        {name: "", keys: ["fixme", "FIXME"]}, 
-        {name: "", key: "", values: [""], other_key: "", other_values: [""]} 
+        //{name: "food_standards", key: "fhrs:id"}, 
+        //{name: "oneway=yes", key: "oneway", value: "yes"}, 
+        //{name: "highway=path", key: "highway", value: "path"}, 
+        //{name: "highway=footway", key: "highway", value: "footway"}, 
+        //{name: "highway=path||footway", key: "highway", values: ["path","footway"]}, 
+        //{name: "", keys: ["fixme", "FIXME"]}, 
+        {name: "designation fix", key: "designation", values: ["public_footpath","public_bridleway"], 
+            other_key: "highway", other_values: [""]} 
     ]
 
     const tagInfoData = await getTagInfoData(preferenceData)
+    console.log( "tagInfoData: ", tagInfoData )
+
+}
+
+const initialiseGoogleSheet = async () => {
+
+}
+
+const addToGoogleSheet = async (data, g_creds, sheet_id, worksheet_id) => {
+    try {
+
+        const g_sheet = new GoogleSpreadsheet( sheet_id )
+
+        await g_sheet.useServiceAccountAuth(g_creds)
+        await g_sheet.loadInfo()
+        // now initialise the Google Sheet Auth
+        
+        const date_str  = moment().format("YYYY-MM-DD")
+        const sheet = g_sheet.sheetsByIndex[ worksheet_id ] 
+        // add a row to the specified worksheet in the google sheet
+        await sheet.addRow({
+            date:date_str, 
+            tag: data.name, 
+            all: data.all, 
+            nodes: data.nodes, 
+            ways: data.ways, 
+            relations: data.relations
+        })
+
+        console.log("Added "+tag+" to google sheet")
+        return true
+
+    } catch (error) {
+        console.log(`Sorry, there was an error adding "${tag}" to the google sheet '${error.message}'`)
+        return error
+    }
 }
 
 const getTagInfoData = async (searchData) => {
-    
+    const tagInfoData = []
+    for(const val of searchData){
+        let data = await processTagInfoEntry(val)
+        tagInfoData.push( data )
+    }
+    return tagInfoData
+
+    /*
     const actions = []
 
     for(const val of searchData){
@@ -131,15 +175,16 @@ const getTagInfoData = async (searchData) => {
             const data = await processTagInfoEntry(val)
             cb(null, data)
         }
+
         actions.push(method)
     }
 
     async.series( actions, function( err, res ){
         // now do something with `res`
-        console.log("finished", res)
+        console.log("finished getTagInfoData")
         return res
     })
-
+    */
 }
 
 const processTagInfoEntry = async (data) => {
@@ -149,30 +194,17 @@ const processTagInfoEntry = async (data) => {
     if (keys.length == 0) return null
 
     let values = removeEmptyEntries(getValues(data))
+    let otherKeys = removeEmptyEntries(getOtherKeys(data))
+    let otherValues = removeEmptyEntries(getOtherValues(data))
 
     const name = data.name ? data.name : keys[0]
-
-    if (values.length > 0) {
+    if (otherKeys.length > 0) {
+        response = await queryCombination(keys, values, otherKeys, otherValues)
+    } else if (values.length > 0) {
         response = await queryKeyValue(keys, values)
     } else {
         response = await queryKey(keys)
     }
-    /*
-    if (data.other_key != undefined) {
-        response = null
-        // @TODO come back to combination searches
-        if (data.other_values != undefined) {
-
-        } else {
-
-        }
-    } else if (data.value != undefined) {
-        response = await queryKeyValue(data.key, [data.value])
-    } else if (data.values != undefined) {
-        response = await queryKeyValue(data.key, data.values)
-    } else {
-        response = await queryKey( data.key )
-    }*/
 
     if (response != null) {
         response.name = name
@@ -180,6 +212,8 @@ const processTagInfoEntry = async (data) => {
         
     return response
 }
+
+// Retrieve values from incoming data
 
 const getKeys = (data) => {
     if (data.keys != undefined) return data.keys
@@ -193,30 +227,71 @@ const getValues = (data) => {
     return []
 }
 
+const getOtherKeys = (data) => {
+    if (data.other_key != undefined) return [data.other_key]
+    if (data.other_keys != undefined) return data.other_keys
+    return []
+}
+
+const getOtherValues = (data) => {
+    if (data.other_value != undefined) return [data.other_value]
+    if (data.other_values != undefined) return data.other_values
+    return []
+}
+
+// Query tagInfo
+
+const queryKey = async (keys) => {
+    const responses = []
+    for(const key of keys) {
+        const taginfoData = await get('api/4/key/stats?key='+ key);
+        responses.push( parseData(taginfoData.data) )
+    }
+    return combineResponses(responses)
+}
+
+const queryKeyValue = async (keys, values) => {
+    const responses = []
+    for(const key of keys) {
+        for(const value of values) {
+            const taginfoData = await get('api/4/tag/stats?key='+ key+'&value='+value);
+            responses.push( parseData(taginfoData.data) )
+        }
+    }
+    return combineResponses(responses)
+}
+
+const queryCombination = async (keys, values, otherKeys, otherValues) => {
+    const responses = []
+    for(const key of keys) {
+        for(const value of values) {
+            const taginfoData = await get('api/4/tag/combinations?key='+ key+'&value='+value);
+            for(const entry of taginfoData.data) {
+                if (otherKeys.indexOf(entry.other_key) > -1) {
+                    const match = (otherValues.length > 0) ? (otherValues.indexOf(entry.other_value) > -1) : true
+                    if (match) {
+                        console.log("match", key, value, entry)
+                        responses.push({
+                            all: entry.together_count, 
+                            nodes: null,
+                            ways: null,
+                            relations: null
+                        })
+                    }
+                }
+            }
+        }
+    }
+    console.log(responses.length)
+    return combineResponses(responses)
+}
+
+// Helper
+
 const removeEmptyEntries = (data) => {
     let response = data.filter( val => val != "" )
     if (response.length != data.length) console.log("removed entries!")
     return response
-}
-
-const queryKey = async (keys) => {
-    const parsed = []
-    for(const key of keys) {
-        const taginfoData = await get('api/4/key/stats?key='+ key);
-        parsed.push( parseData(taginfoData.data) )
-    }
-    return combineResponses(parsed)
-}
-
-const queryKeyValue = async (keys, values) => {
-    const parsed = []
-    for(const key of keys) {
-        for(const value of values) {
-            const taginfoData = await get('api/4/tag/stats?key='+ key+'&value='+value);
-            parsed.push( parseData(taginfoData.data) )
-        }
-    }
-    return combineResponses(parsed)
 }
 
 const combineResponses = (arr) => {
