@@ -14,18 +14,9 @@ var async   = require("async")
 var g_creds = require('./google-generated-creds.json')
 // @TODO get preference data dynamically
 var data    = require('./google-sheet-id.json')
+// processData(data)
 
 
-/*
-var sheet_id = require('./google-sheet-id.json').google_sheet_id
-var g_sheet = new gs(sheet_id)
-// what are we looking for?
-var tag = 'leisure:nature_reserve'
-var key = 'leisure'
-var value = 'nature_reserve'
-*/
-
-var actions = []
 
 const get = bent('https://taginfo.openstreetmap.org.uk/', 'GET', 'json', 200);
 
@@ -92,22 +83,178 @@ const generic_method = async function(callback) {
     }
 
 }
+const processData = (data) => {
 
-// loop through all of the options in the json
-for(var i=0;i<data.length;i++){
+    let actions = []
 
-	var key          = data[i].taginfo_key
-	var value        = data[i].taginfo_value
-	var sheet_id     = data[i].google_sheet_id
-	var worksheet_id = data[i].worksheet_number
-	
-	var tag          = key + ':' + value
+    // loop through all of the options in the json
+    for(var i=0;i<data.length;i++){
 
-	actions.push( generic_method.bind( {key:key, value:value, sheet_id:sheet_id, worksheet_id:worksheet_id, tag:tag} ) )
+        var key          = data[i].taginfo_key
+        var value        = data[i].taginfo_value
+        var sheet_id     = data[i].google_sheet_id
+        var worksheet_id = data[i].worksheet_number
+        
+        var tag          = key + ':' + value
+
+        actions.push( generic_method.bind( {key:key, value:value, sheet_id:sheet_id, worksheet_id:worksheet_id, tag:tag} ) )
+
+    }
+
+    async.series( actions, function( err, res ){
+
+        console.log("finished")
+    })
 
 }
 
-async.series( actions, function( err, res ){
+const main = async () => {
+    const preferenceData = [
+        {name: "food_standards", key: "fhrs:id"}, 
+        {name: "oneway=yes", key: "oneway", value: "yes"}, 
+        //{name: "", key: "", values: ["",""]}, 
+        //{name: "", key: "", values: [""], other_key: "", other_values: [""]} 
+    ]
 
-	console.log("finished")
-})
+    const tagInfoData = await getTagInfoData(preferenceData)
+}
+
+const getTagInfoData = async (searchData) => {
+    
+    const actions = []
+
+    for(const val of searchData){
+        let method = async (cb) => {
+            const data = await processTagInfoEntry(val)
+            cb(null, data)
+        }
+        actions.push(method)
+    }
+
+    async.series( actions, function( err, res ){
+        // now do something with `res`
+        console.log("finished", res)
+        return res
+    })
+
+}
+
+const processTagInfoEntry = async (data) => {
+    let response = null
+
+
+    let keys = getKeys(data)
+    if (keys.length == 0) return null
+
+    let values = getValues(data)
+
+    const name = data.name ? data.name : keys[0]
+
+    if (values != null) {
+        response = await queryKeyValue(keys, values)
+    } else {
+        response = await queryKey(keys)
+    }
+    /*
+    if (data.other_key != undefined) {
+        response = null
+        // @TODO come back to combination searches
+        if (data.other_values != undefined) {
+
+        } else {
+
+        }
+    } else if (data.value != undefined) {
+        response = await queryKeyValue(data.key, [data.value])
+    } else if (data.values != undefined) {
+        response = await queryKeyValue(data.key, data.values)
+    } else {
+        response = await queryKey( data.key )
+    }*/
+
+    if (response != null) {
+        response.name = name
+    }
+        
+    return response
+}
+
+const getKeys = (data) => {
+    if (data.keys != undefined) return data.keys
+    if (data.key != undefined) return [data.key]
+    return []
+}
+
+const getValues = (data) => {
+    if (data.value != undefined) return [data.value]
+    if (data.values != undefined) return data.values
+    return null
+}
+
+const queryKey = async (keys) => {
+    const parsed = []
+    for(const key of keys) {
+        const taginfoData = await get('api/4/key/stats?key='+ key);
+        parsed.push( parseData(taginfoData.data) )
+    }
+    return combineResponses(parsed)
+}
+
+const queryKeyValue = async (keys, values) => {
+    const parsed = []
+    for(const key of keys) {
+        for(const value of values) {
+            const taginfoData = await get('api/4/tag/stats?key='+ key+'&value='+value);
+            parsed.push( parseData(taginfoData.data) )
+        }
+    }
+    return combineResponses(parsed)
+}
+
+const combineResponses = (arr) => {
+    // combine parsed data
+    const response = {
+        all: null,
+        nodes: null,
+        ways: null,
+        relations: null
+    }
+    arr.forEach( value => {
+        response.all += value.all
+        response.nodes += value.nodes
+        response.ways += value.ways
+        response.relations += value.relations
+    })
+    return response
+}
+
+const parseData = (data) => {
+    let response = {
+        all: null,
+        nodes: null,
+        ways: null,
+        relations: null
+    }
+    for(var i=0;i<data.length;i++){
+        var type  = data[i].type
+        var count = data[i].count
+        switch (type) {
+            case "all":
+                response.all = count
+                break
+            case "nodes":
+                response.nodes = count
+                break
+            case "ways":
+                response.ways = count
+                break
+            case "relations":
+                response.relations = count
+                break
+        }
+    }
+    return response
+}
+
+
+main()
