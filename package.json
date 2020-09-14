@@ -1,18 +1,19 @@
 {
-  "name": "osm_taginfo",
+  "name": "taginfo_to_gsheet",
   "version": "1.0.0",
   "description": "a simple script to get taginfo data and put it into a google sheet",
-  "main": "index.js",
+  "main": "lib/process.js",
+  "bin": "bin/cli.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/atomoil/osm_taginfo"
   },
   "keywords": [
-    "openstreetmap"
+    "openstreetmap",
+    "taginfo"
   ],
   "author": "Adam Hoyle",
   "license": "MIT",
@@ -24,6 +25,7 @@
     "async": "^1.5.1",
     "bent": "^7.3.10",
     "google-spreadsheet": "^3.0.0",
-    "moment": "^2.10.6"
+    "moment": "^2.10.6",
+    "yargs": "^16.0.3"
   }
 }
