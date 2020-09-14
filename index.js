@@ -7,19 +7,22 @@
 
 // import everything
 var moment  = require('moment')
-const { GoogleSpreadsheet } = require("google-spreadsheet")
-var async   = require("async")
+
 // @TODO get google-generated-creds dynamically
 var g_creds = require('./google-generated-creds.json')
 // @TODO get preference data dynamically
-var data    = require('./google-sheet-id.json')
+//var data    = require('./google-sheet-id.json')
 // processData(data)
 
+
+const g_creds_file = './google-generated-creds.json'
+const pref_file = './google-sheet-id.json'
+
 const getTagInfoData = require('./lib/taginfo/taginfo')
+const addToGoogleSheet = require('./lib/googlesheet/googlesheet')
 
 
-
-
+/*
 const generic_method = async function(callback) {
 	
 	// convert bound variables to local variables so they retain scope in this function 
@@ -107,8 +110,39 @@ const processData = (data) => {
     })
 
 }
+*/
 
-const main = async () => {
+const main = async (pref_file, g_creds_file) => {
+    const preferenceData = getPreferences(pref_file)
+    try {
+        const g_creds = require(g_creds_file)
+    } catch (e) {
+        console.log(`Error: couldn't open google creds file at '${g_creds_file}'`)
+        return 
+    }
+   
+    console.log(`There are ${preferenceData.length} entries ${Array.isArray(preferenceData)}`)
+
+    for(entry in preferenceData) {
+        console.log(entry)
+        const tagInfoData = await getTagInfoData(entry.tagInfo)
+        await addToGoogleSheet(tagInfoData, g_creds, entry.google_sheet_id, entry.worksheet_number)
+    }
+
+}
+
+const getPreferences = async (file) => {
+    try {
+        
+
+        const prefsData = require(file)
+        console.log(prefsData)
+        return prefsData
+    } catch (e) {
+        console.log(`Error: couldn't open preference file at ${file}`)
+        return []
+    }
+    /*
     const preferenceData = [
         //{name: "food_standards", key: "fhrs:id"}, 
         //{name: "oneway=yes", key: "oneway", value: "yes"}, 
@@ -119,46 +153,8 @@ const main = async () => {
         {name: "designation fix", key: "designation", values: ["public_footpath","public_bridleway"], 
             other_key: "highway", other_values: [""]} 
     ]
-
-    const tagInfoData = await getTagInfoData(preferenceData)
-    console.log( "tagInfoData: ", tagInfoData )
-
+    return preferenceData
+    */
 }
 
-const initialiseGoogleSheet = async () => {
-
-}
-
-const addToGoogleSheet = async (data, g_creds, sheet_id, worksheet_id) => {
-    try {
-
-        const g_sheet = new GoogleSpreadsheet( sheet_id )
-
-        await g_sheet.useServiceAccountAuth(g_creds)
-        await g_sheet.loadInfo()
-        // now initialise the Google Sheet Auth
-        
-        const date_str  = moment().format("YYYY-MM-DD")
-        const sheet = g_sheet.sheetsByIndex[ worksheet_id ] 
-        // add a row to the specified worksheet in the google sheet
-        await sheet.addRow({
-            date:date_str, 
-            tag: data.name, 
-            all: data.all, 
-            nodes: data.nodes, 
-            ways: data.ways, 
-            relations: data.relations
-        })
-
-        console.log("Added "+tag+" to google sheet")
-        return true
-
-    } catch (error) {
-        console.log(`Sorry, there was an error adding "${tag}" to the google sheet '${error.message}'`)
-        return error
-    }
-}
-
-
-
-main()
+main(pref_file, g_creds_file)
