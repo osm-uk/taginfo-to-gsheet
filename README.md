@@ -25,7 +25,7 @@ Intended to be run as a cronjob on a daily basis.
 [
     {
         "tag_info": [
-            {"name": "oneway=yes", "key": "oneway", "value": "yes"}
+            {"name": "oneway", "key": "oneway", "value": "yes"}
         ],
         "google_sheet_id": "<sheet-id-goes-here>",
         "worksheet_number": 0
@@ -58,7 +58,7 @@ Intended to be run as a cronjob on a daily basis.
 * `{name: "designations", key: "designation", values: ["public_footpath","public_bridleway"], matches_key: "highway"}`
     * searches for `designation=public_footpath` and `designation=public_bridleway` that appear on `highway=*`
 
-* `{name: "designations", key: "designation", values: ["public_footpath","public_bridleway"], matches_key: "highway", matches_values: ["footway","path"]}`
+* `{name: "designations for footpaths", key: "designation", values: ["public_footpath","public_bridleway"], matches_key: "highway", matches_values: ["footway","path"]}`
     * searches for `designation=public_footpath` and `designation=public_bridleway` that appear on `highway=footway` or `highway=path`
 
 
