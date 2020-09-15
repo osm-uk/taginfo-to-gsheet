@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-const yargs = require("yargs");
 const { tagInfoToGoogleSheets } = require('./lib/process')
 
 const argv = require("yargs")
