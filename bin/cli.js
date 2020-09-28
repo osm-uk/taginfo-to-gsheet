@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { tagInfoToGoogleSheets } = require('./lib/process')
+const { tagInfoToGoogleSheets } = require('../lib/process')
 
 const argv = require("yargs")
     .command("$0 <googleSheetsCredentials> <tagInfoSearch>", 'Search on tagInfo and add to Google Sheets', (yargs) => {
