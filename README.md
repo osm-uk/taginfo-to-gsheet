@@ -72,3 +72,6 @@ This script requires 2 files (next to this file) to work.
     * Add the email of the service account to the sheet you'd like to add to
 
 
+## Development
+
+If you are working locally with this repo, then use `npm link` to create the `taginfo_to_gsheet` binary from the local source code (and use `npm unlink` to clean up afterwards)
