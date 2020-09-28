@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/atomoil/osm_taginfo"
+    "url": "https://github.com/atomoil/taginfo_to_gsheet"
   },
   "keywords": [
     "openstreetmap",
@@ -18,9 +18,9 @@
   "author": "Adam Hoyle",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/atomoil/osm_taginfo/issues"
+    "url": "https://github.com/atomoil/taginfo_to_gsheet/issues"
   },
-  "homepage": "https://github.com/atomoil/osm_taginfo",
+  "homepage": "https://github.com/atomoil/taginfo_to_gsheet",
   "dependencies": {
     "async": "^1.5.1",
     "bent": "^7.3.10",
