@@ -7,7 +7,7 @@ Intended to be run as a cronjob on a daily basis.
 
 ## Installation
 
-`npm i -g taginfo_to_gsheets`
+`npm i -g taginfo_to_gsheet`
 
 ## Usage
 
