@@ -1,11 +1,13 @@
 # OSM TagInfo to Google Sheets
 
-A script to get information from the Open Street Map TagInfo API and add it to a Google Sheet.
+A script to get information from the Open Street Map TagInfo API and append it to a Google Sheet for further presentation.
 
 Intended to be run as a cronjob on a daily basis.
 
 
 ## Installation
+
+You need npm to install. This is bundled as part of [node.js](https://nodejs.org/en/).
 
 `npm i -g taginfo_to_gsheet`
 
@@ -50,16 +52,16 @@ Intended to be run as a cronjob on a daily basis.
     * search for `oneway=yes`
 
 * `{"name": "paths and footways", "key": "highway", "values": ["path","footway"]}`
-    * search for `highway=path` and `highway=footway`
+    * search for database entries (nodes, ways, relations) that match `highway=path` or `highway=footway`
 
 * `{"name": "need fixing", "keys": ["fixme", "FIXME"]}`
-    * search for instances of the key `fixme` and `FIXME`
+    * search for instances of the key `fixme` or `FIXME`
 
 * `{"name": "designations", "key": "designation", "values": ["public_footpath","public_bridleway"], "matches_key": "highway"}`
-    * searches for `designation=public_footpath` and `designation=public_bridleway` that appear on `highway=*`
+    * searches for `designation=public_footpath` or `designation=public_bridleway` that appear on `highway=*`
 
 * `{"name": "designations for footpaths", "key": "designation", "values": ["public_footpath","public_bridleway"], "matches_key": "highway", "matches_values": ["footway","path"]}`
-    * searches for `designation=public_footpath` and `designation=public_bridleway` that appear on `highway=footway` or `highway=path`
+    * searches for `designation=public_footpath` or `designation=public_bridleway` that appear on either `highway=footway` or `highway=path`
 
 ### Multiple searches
 
@@ -94,13 +96,13 @@ In the following example "oneway" and "paths and footways" both go on the same s
 
 ## Creating a Google Service Account
 
-* Create / Activate a Google Developer account
-* In the Google Dashboard, create a new project
-* Activate the Google Sheets API
+* Create / Activate a [Google Developer account](https://developers.google.com) 
+* In the [Google Dashboard](https://console.developers.google.com), create a new project
+* Activate the Google Sheets API for that project
 * With the Google Sheets API selected, create a Service account.
 * Edit the service account and add a key to it. 
 * When adding a key, there is a JSON option, choose this and that's the file you'll need.
-* Add the email of the service account to the sheet you'd like to add to
+* Add the email of the service account to the sheet you'd like to add to by 'inviting' them to edit the sheet.
 
 
 ## Development
