@@ -1,4 +1,4 @@
-# OSM TagInfo to Google Sheets
+# TagInfo to Google Sheets
 
 A script to get information from the Open Street Map TagInfo API and append it to a Google Sheet for further presentation.
 
