@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/osm-uk/taginfo-to-gsheet",
   "dependencies": {
-    "async": "^1.5.1",
+    "async": "^2.6.4",
     "bent": "^7.3.10",
     "google-spreadsheet": "^3.0.0",
     "moment": "^2.10.6",
